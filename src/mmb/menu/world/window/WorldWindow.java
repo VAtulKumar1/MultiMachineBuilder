@@ -7,12 +7,10 @@ import static mmb.engine.settings.GlobalSettings.$res;
 
 import java.awt.Adjustable;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.JMenuBar;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
@@ -27,10 +25,10 @@ import mmb.engine.CatchingEvent;
 import mmb.engine.debug.Debugger;
 import mmb.engine.files.Save;
 import mmb.engine.inv.ItemRecord;
-import mmb.engine.item.ItemEntry;
 import mmb.engine.item.Items;
 import mmb.engine.json.JsonTool;
 import mmb.engine.recipe.Recipe;
+import mmb.engine.settings.GlobalSettings;
 import mmb.engine.worlds.universe.Universe;
 import mmb.engine.worlds.world.Player;
 import mmb.engine.worlds.world.World;
@@ -40,8 +38,6 @@ import mmb.menu.components.BoundCheckBoxMenuItem;
 import mmb.menu.main.MainMenu;
 import mmb.menu.world.inv.InventoryController;
 import mmb.menu.wtool.ToolStandard;
-import mmb.menu.wtool.WindowTool;
-
 import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,12 +47,10 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.JCheckBoxMenuItem;
-import net.miginfocom.swing.MigLayout;
 import javax.swing.JProgressBar;
 
 /**
@@ -113,13 +107,9 @@ public class WorldWindow extends MMBFrame{
 		}
 	}
 	
-	/**
-	 * The default tool
-	 */
+	/** The default tool */
 	public final ToolStandard std;
-	/**
-	 * Creates a new world window
-	 */
+	/** Creates a new world window */
 	public WorldWindow() {
 		debug.printl(Items.items.size()+" items");
 		setTitle("Test");
@@ -156,74 +146,22 @@ public class WorldWindow extends MMBFrame{
 		});
 		
 		//root split pane
-			JSplitPane rootPane1 = new JSplitPane();
-			rootPane1.setResizeWeight(1.0);
-			rootPane1.setDividerLocation(0.8);
-			getContentPane().add(rootPane1, BorderLayout.CENTER);
-			//Viewport tabbed pane
 				pane = new JTabbedPane();
-				//[start] World pane
-					JSplitPane worldPane = new JSplitPane();
-					worldPane.setDividerLocation(320);
-					//[start] The world frame panel
-						JPanel worldFramePanel = new JPanel();
-						worldFramePanel.setLayout(new MigLayout("", "[101px,grow,center]", "[80px,grow][][][]"));
-						worldPane.setRightComponent(worldFramePanel);
-						
-						worldFrame = new WorldFrame(this);
-						worldFrame.setBackground(Color.GRAY);
-						worldFrame.titleChange.addListener(this::updateTitle);
-						worldFramePanel.add(worldFrame, "cell 0 0,grow");
-						
-						progressHP = new JProgressBar();
-						worldFramePanel.add(progressHP, "cell 0 1,growx");
-						
-						lblStatus = new JLabel("STATUSBAR");
-						lblStatus.setOpaque(true);
-						lblStatus.setBackground(new Color(65, 105, 225));
-						worldFramePanel.add(lblStatus, "cell 0 2,growx");
-					//[end]
-					//[start] Scrollable Placement List Pane
-						JSplitPane scrollistBipane = new JSplitPane();
-						scrollistBipane.setResizeWeight(0.5);
-						scrollistBipane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-						scrollistBipane.setDividerLocation(0.8);
-						//Scrollable Placement List
-							scrollablePlacementList = new ScrollablePlacementList(toolModel);
-							scrollistPane = new JScrollPane();
-							scrollistPane.setViewportView(scrollablePlacementList);
-							scrollistBipane.setLeftComponent(scrollistPane);
-							ListSelectionModel selModel = scrollablePlacementList.getSelectionModel();
-							DefaultListModel<ItemRecord> invModel = scrollablePlacementList.getModel();
-						//Tool Pane
-							JScrollPane toolPane = new JScrollPane();
-							toolList = new WorldToolList(toolModel, this);
-							toolList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-							toolPane.setViewportView(toolList);
-							WindowTool std0 = null;
-							for(int i = 0; i < toolList.model.getSize(); i++) {
-								WindowTool tool = toolList.model.elementAt(i);
-								if(tool instanceof ToolStandard) {
-									toolList.setSelectedIndex(i);
-									std0 = tool;
-									break;
-								}
-							}
-							if(std0 == null) throw new IllegalStateException("ToolStandard is missing");
-							std = (ToolStandard) std0;
-							scrollistBipane.setRightComponent(toolPane);
-						worldPane.setLeftComponent(scrollistBipane);
-					//[end]
-					worldFrame.setActive(true);
-					worldFrame.setPlacer(scrollablePlacementList);
-					
-					lblTool = new MultilineLabel("Tool description goes here");
-					worldFramePanel.add(lblTool, "cell 0 3,grow");
-					lblTool.setForeground(Color.WHITE);
-					lblTool.setBackground(Color.BLUE);
-					lblTool.setOpaque(true);
-					pane.add($res("wgui-world"), worldPane);
-				//[end]
+				worldtab = new TabWorld(this);
+				std = worldtab.std;
+				selModel = worldtab.selModel;
+				invModel = worldtab.invModel;
+				this.toolEditorSplitPane = new JSplitPane();
+				toolModel = worldtab.toolModel;
+				worldFrame = worldtab.worldFrame;
+				lblTool = worldtab.lblTool;
+				lblStatus = worldtab.lblStatus;
+				scrollablePlacementList = worldtab.scrollablePlacementList;
+				toolList = worldtab.toolList;
+				progressHP = worldtab.progressHP;
+				
+				toolList.setSelectedIndex(worldtab.stdIndex);
+				pane.add($res("wgui-world"), worldtab);
 				//[start] Inventory pane
 					panelPlayerInv = new TabInventory(this);
 					panelPlayerInv.craftGUI.inventoryController.setModel(invModel);
@@ -234,33 +172,17 @@ public class WorldWindow extends MMBFrame{
 					TabRecipes recipePane = new TabRecipes();
 					pane.addTab($res("wgui-recipes"), null, recipePane, null);
 				//[end]
-			rootPane1.setLeftComponent(pane);
-
-			//tool panel
-				//editor split pane: placement/destruction GUI
-					toolEditorSplitPane = new JSplitPane();
-					toolEditorSplitPane.setDividerLocation(128);
-					toolEditorSplitPane.setResizeWeight(0.5);
-					toolEditorSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-					rootPane1.setRightComponent(toolEditorSplitPane);
-					//Editor tabbed pane
-						dialogs = new JTabbedPane(SwingConstants.LEFT);
-						toolEditorSplitPane.setLeftComponent(dialogs);
+			getContentPane().add(pane, BorderLayout.CENTER);
 					
 					String scale = $res("wgui-scale");
 					
-					/*BoundCheckBoxMenuItem cSortItems = new BoundCheckBoxMenuItem();
-					cSortItems.setText($res("wgui-sortis"));
-					cSortItems.setVariable(WorldFrame.DEBUG_DISPLAY);
-					mnNewMenu.add(cSortItems);*/
 					debug.printl("Number of zoom levels: "+WorldFrame.zoomlevels.size()); //48
-					
 					
 					//Menu bar
 						//Menu
-							JMenu mnNewMenu1 = new JMenu($res("wgui-game"));
-							menuBar.add(mnNewMenu);
-							menuBar.add(mnNewMenu1);
+							JMenu mnGame = new JMenu($res("wgui-game"));
+							menuBar.add(mnWindow);
+							menuBar.add(mnGame);
 							checkBindCameraPlayer = new JCheckBoxMenuItem($res("wgui-bound"));
 							menuBar.add(checkBindCameraPlayer);
 							
@@ -268,10 +190,10 @@ public class WorldWindow extends MMBFrame{
 								BoundCheckBoxMenuItem cDebugDisplay = new BoundCheckBoxMenuItem();
 								cDebugDisplay.setText($res("wgui-debug"));
 								cDebugDisplay.setVariable(WorldFrame.DEBUG_DISPLAY);
-								mnNewMenu1.add(cDebugDisplay);
+								mnGame.add(cDebugDisplay);
 								
 								JLabel lblBlockScale = new JLabel(scale+" 32");
-								mnNewMenu1.add(lblBlockScale);
+								mnGame.add(lblBlockScale);
 								
 								JScrollBar slideBlockScale = new JScrollBar();
 								slideBlockScale.setValue(27);
@@ -283,8 +205,7 @@ public class WorldWindow extends MMBFrame{
 									debug.printl("Scale: "+e.getValue());
 								});
 								slideBlockScale.setOrientation(Adjustable.HORIZONTAL);
-								mnNewMenu1.add(slideBlockScale);
-					
+								mnGame.add(slideBlockScale);					
 		//Framerate
 		fpsCounter.scheduleAtFixedRate(new TimerTask() {
 			@Override
@@ -301,7 +222,7 @@ public class WorldWindow extends MMBFrame{
 	private static final String str_spd = $res("wgui-kmh");
 	private static final String str_spdtrue = $res("wgui-kmhtrue");
 	private static final String str_spdphys = $res("wgui-kmhphys");
-	private void updateTitle(String s) {
+	void updateTitle(String s) {
 		//Update the status
 		if(getPlayer() != null) {
 			StringBuilder status = new StringBuilder(str_spd+" ");
@@ -335,14 +256,29 @@ public class WorldWindow extends MMBFrame{
 	}
 	@NN private static final Debugger debug = new Debugger("WORLD TEST");
 	
-	//dialogs [BROKEN]
-	private JTabbedPane dialogs;
-	public void openDialogWindow(Component comp, String s) {
-		dialogs.add(s, comp);
+	
+	
+	//World tab elements
+	//tool list
+	public final TabWorld worldtab;
+	public final ListSelectionModel selModel;
+	public final DefaultListModel<ItemRecord> invModel;
+	public final WorldToolList toolList;
+	public final MultilineLabel lblTool;
+	public final JSplitPane toolEditorSplitPane;
+	/** Player inventory panel */
+	public final TabInventory panelPlayerInv;
+	private JScrollPane scrollistPane;
+	/**
+	 * Sets the placement GUI
+	 * @param comp
+	 */
+	public void setPlacerGUI(Component comp) {
+		toolEditorSplitPane.setLeftComponent(comp);
 	}
-	public void closeDialogWindow(Component comp) {
-		dialogs.remove(comp);
-	}
+	public final JProgressBar progressHP;
+	/** The tool selection. Changes to the model are reflected in the window and vice versa */
+	@NN public final transient ToolSelectionModel toolModel;
 	
 	//tabs
 	private JTabbedPane pane;
@@ -353,6 +289,7 @@ public class WorldWindow extends MMBFrame{
 		pane.add(s, comp);
 		pane.setSelectedComponent(comp);
 	}
+	
 	/**
 	 * Closes a tab. Its destroyTab() method is called to dispose of resources
 	 * @param component
@@ -365,20 +302,6 @@ public class WorldWindow extends MMBFrame{
 		}
 		pane.remove(component);
 	}
-
-	//tool list
-	private WorldToolList toolList;
-	
-	public final JSplitPane toolEditorSplitPane;
-	private TabInventory panelPlayerInv;
-	private JScrollPane scrollistPane;
-	/**
-	 * Sets the placement GUI
-	 * @param comp
-	 */
-	public void setPlacerGUI(Component comp) {
-		toolEditorSplitPane.setLeftComponent(comp);
-	}
 	
 	/**
 	 * @param s save file
@@ -390,6 +313,10 @@ public class WorldWindow extends MMBFrame{
 		panelPlayerInv.setPlayer(worldFrame.getMap().player);
 		progressHP.setModel(worldFrame.getMap().player.playerHP);
 		scrollablePlacementList.setInv(worldFrame.getMap().player.inv);
+		panelPlayerInv.lblGamemode.setText(
+			worldFrame.getMap().player.creative.getValue() ? 
+			GlobalSettings.$res("wgui-creamode") 
+		  : GlobalSettings.$res("wgui-survival"));
 	}
 	/** @return a world which is currently played */
 	public Universe getWorld() {
@@ -447,11 +374,10 @@ public class WorldWindow extends MMBFrame{
 		}
 	}
 	
-	/** The tool selection. Changes to the model are reflected in the window and vice versa */
-	@NN public final transient ToolSelectionModel toolModel = new ToolSelectionModel(this);
-	private MultilineLabel lblTool;
+	
+	
 	private JCheckBoxMenuItem checkBindCameraPlayer;
-	private JLabel lblStatus;
+	private final JLabel lblStatus;
 	
 	//Recipe selection
 	/** Recipe clipboard */
@@ -483,7 +409,7 @@ public class WorldWindow extends MMBFrame{
 	public        final Event<@NN World> worldLoaded = new CatchingEvent<>(debug, "Failed to run world world loaded event");
 	/** Invoked when a world is unloaded in this world window */
 	public        final Event<@NN World> worldLeft = new CatchingEvent<>(debug, "Failed to run world world left event");
-	private JProgressBar progressHP;
+	
 
 	/** @return an item selected by the player */
 	@Nil public ItemRecord selectedItem() {

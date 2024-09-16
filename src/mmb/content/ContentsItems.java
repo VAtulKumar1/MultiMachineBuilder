@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import mmb.DeprecatedExtra;
 import mmb.NN;
 import mmb.content.agro.Agro;
 import mmb.content.aim.ToolAim;
@@ -34,7 +35,6 @@ import mmb.engine.java2d.ColorMapper;
 import mmb.engine.java2d.TexGen;
 import mmb.engine.settings.GlobalSettings;
 import mmb.engine.texture.Textures;
-import mmb.menu.wtool.DumpItems;
 
 /**
  * @author oskar
@@ -82,12 +82,16 @@ public class ContentsItems {
 	/** The most basic pickaxe available in the game */
 	@NN public static final PickaxeType pickWood = Pickaxe.create(100, 100, "item/wood pick.png", "#pick-wood", "pick.wood");
 	/** An improved pickaxe available later */
-	@NN public static final PickaxeType pickRudimentary = Pickaxe.create(50, 400, "item/rudimentary pick.png", "#pick-rud", "pick.rudimentary");
-	/** Pick up or drop items */
-	@NN public static final Item bucket = new TooledItem(new DumpItems())
-		.title("#bucket")
-		.texture("dropItems.png")
-		.finish("mmb.bucket");
+	@NN public static final PickaxeType pickRudimentary = Pickaxe.create(50, 200, "item/rudimentary pick.png", "#pick-rud", "pick.rudimentary");
+	/** An improved pickaxe made of stone */
+	@NN public static final PickaxeType pickStone = Pickaxe.create(50, 150, "item/stone pick.png", "#pick-stone", "pick.stone");
+	/** A mid-tier pickaxe */
+	@NN public static final PickaxeType pickIron = Pickaxe.create(32, 250, "item/iron pick.png", "#pick-iron", "pick.iron");
+	/** An advanced pickaxe */
+	@NN public static final PickaxeType pickSteel = Pickaxe.create(20, 350, "item/steel pick.png", "#pick-steel", "pick.steel");
+	/** The definitive pickaxe */
+	@NN public static final PickaxeType pickStainless = Pickaxe.create(14, 600, "item/stainless pick.png", "#pick-stainless", "pick.stainless");
+	
 	/** Configure resizable machines (dropped item extractors and diggers)*/
 	@NN public static final Item configExtractors= new TooledItem(new ConfigureDroppedItemExtractors())
 		.title("#cdie")
@@ -224,8 +228,19 @@ public class ContentsItems {
 		.volumed(0.001)
 		.factory(Pack::new)
 		.finish("boxed.packItem");
+	
+	//Deprecated items
+	/** Pick up or drop items */
+	@DeprecatedExtra(replacementVer="0.5.1", removal="0.6")
+	@Deprecated(since="0.5.1", forRemoval=true)
+	/**@deprecated Replaced by extra keybinds in the standard tool */
+	@NN public static final Item bucket = new Item()
+		.title("#depr-bucket")
+		.texture("dropItems.png")
+		.finish("mmb.bucket");
+	
 	static {
-		Items.tagItems("tool", pickVW, pickWood, pickRudimentary, bucket, configExtractors, aim);
+		Items.tagItems("tool", pickVW, pickWood, pickRudimentary, pickStone, pickIron, pickSteel, pickStainless, bucket, configExtractors, aim);
 		Items.tagItems("craftcode", craftcodes);
 		Items.tagItems("agro", Agro.yeast, Agro.hops, Agro.seeds);
 		Items.tagItems("material-glass", glass, glassp);
@@ -240,6 +255,7 @@ public class ContentsItems {
 		Items.tagItem("voltage-EV", bat6);
 		Items.tagItem("voltage-IV", bat7);
 		Items.tagItems("resrcbed", resrc1, resrc2, resrc3, resrc4, resrc5, resrc6, resrc7);
+		Items.tagItem("deprecated", bucket);
 		
 		Items.deprecate("industry.motor1", motor.items.get(0));
 		Items.deprecate("industry.motor2", motor.items.get(1));

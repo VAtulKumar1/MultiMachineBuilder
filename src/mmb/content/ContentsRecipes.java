@@ -9,7 +9,7 @@ import static mmb.content.CraftingGroups.*;
 import static mmb.content.rawmats.Materials.*;
 
 import mmb.content.agro.Agro;
-import mmb.content.craft.Crafter;
+import mmb.content.craft.ManCrafter;
 import mmb.content.electric.VoltageTier;
 import mmb.content.electric.machines.BlockTransformer.TransformerData;
 import mmb.content.electronics.Electronics;
@@ -42,12 +42,12 @@ public class ContentsRecipes {
 		splitter.add(logs, plank, 16, VoltageTier.V1, 1000);
 		
 		//Crafting tables
-		crafting.addRecipeGrid(plank, 2, 2, Crafter.types.get(0), 1); //4*wood plank → crafting table 1
+		crafting.addRecipeGrid(plank, 2, 2, ManCrafter.types.get(0), 1); //4*wood plank → crafting table 1
 		crafting.addRecipeGrid(new ItemEntry[]{
-		Crafter.types.get(0), steel.frame,        Crafter.types.get(0),
+		ManCrafter.types.get(0), steel.frame,        ManCrafter.types.get(0),
 		steel.frame,           robot.items.get(1), steel.frame,
-		Crafter.types.get(0), steel.frame,        Crafter.types.get(0)
-		}, 3, 3, Crafter.types.get(1));
+		ManCrafter.types.get(0), steel.frame,        ManCrafter.types.get(0)
+		}, 3, 3, ManCrafter.types.get(1));
 		
 		//Crafting aids
 		crafting.addRecipeGrid(new ItemEntry[]{
@@ -402,34 +402,58 @@ public class ContentsRecipes {
 		}, 3, 1, SPEAKER);
 	}
 	private static void _tools() {
-		crafting.addRecipeGrid(PICKBUILDER, 1, 1, new SimpleItemList(
+		crafting.addRecipe(PICKBUILDER, new SimpleItemList(
 			plank.stack(2),
 			logs.stack(2)
-		));//pickaxe builder is deprecated - ingredient recovery recipe
+		)); //pickaxe builder is deprecated - ingredient recovery recipe
+		crafting.addRecipe(bucket, stone.stack(5)); //item bucket is deprecated - ingredient recovery recipe
+		
 		
 		crafting.addRecipe(new FixedGrid<>(3,
-		plank, logs,  plank,
-		null,  plank, null,
-		null,  plank, null), ItemRaw.make(pickWood), 1);
+				plank,	logs,	plank,
+				null,	plank,	null,
+				null,	plank,	null),
+				ItemRaw.make(pickWood), 1);
+		
 		crafting.addRecipe(new FixedGrid<>(3,
-		Materials.rudimentary.nugget, Materials.rudimentary.base,   Materials.rudimentary.nugget,
-		null,                         Materials.rudimentary.nugget, null,
-		null,                         Materials.rudimentary.nugget, null), ItemRaw.make(pickRudimentary), 1);
+				stone,	stone,	stone,
+				null,	stone,	null,
+				null,	stone,	null),
+				ItemRaw.make(pickStone), 1);
+		
+		crafting.addRecipe(new FixedGrid<>(3,
+				Materials.rudimentary.nugget,	Materials.rudimentary.base,	Materials.rudimentary.nugget,
+				null,				Materials.rudimentary.nugget,	null,
+				null,				Materials.rudimentary.nugget,	null),
+				ItemRaw.make(pickRudimentary), 1);
+		
+		crafting.addRecipe(new FixedGrid<>(3,
+				Materials.iron.nugget,		Materials.iron.base,		Materials.iron.nugget,
+				null,				Materials.iron.nugget,		null,
+				null,				Materials.iron.nugget,		null), 
+				ItemRaw.make(pickIron));
+		
+		crafting.addRecipe(new FixedGrid<>(3,
+				Materials.steel.nugget,		Materials.steel.base,		Materials.steel.nugget,
+				null,				Materials.steel.nugget,		null,
+				null,				Materials.steel.nugget,		null), 
+				ItemRaw.make(pickSteel));
+		
+		crafting.addRecipe(new FixedGrid<>(3,
+				Materials.stainless.nugget,	Materials.stainless.base,	Materials.stainless.nugget,
+				null,				Materials.stainless.nugget,	null,
+				null,				Materials.stainless.nugget,	null), 
+				ItemRaw.make(pickStainless));
 		crafting.addRecipeGrid(new ItemEntry[]{
-		stone, null, stone,
-		stone, null, stone,
-		null,  stone, null
-		}, 3, 3, bucket); //Item bucket
+				null,	stone,	null,
+				stone,	null,	stone,
+				null,	stone,	null
+				}, 3, 3, aim); //Aimer
 		crafting.addRecipeGrid(new ItemEntry[]{
-		null,  stone, null,
-		stone, null, stone,
-		null,  stone, null
-		}, 3, 3, aim); //Aimer
-		crafting.addRecipeGrid(new ItemEntry[]{
-		null,  stone, stone,
-		stone, null,  null,
-		stone, null,  null
-		}, 3, 3, configExtractors); //Configure dropped item extractors
+				null,	stone,	stone,
+				stone,	null,	null,
+				stone,	null,	null
+				}, 3, 3, configExtractors); //Configure dropped item extractors
 		
 	}
 	private static void _chest() {
@@ -489,6 +513,44 @@ public class ContentsRecipes {
 		crafting.addRecipeGrid(new ItemEntry[]{
 		rudimentary.frame, CHEST1, sand,
 		}, 3, 1, HOPPER_both);
+		//Trash can
+		crafting.addRecipeGrid(new ItemEntry[]{
+			rudimentary.base, null, rudimentary.base,
+			rudimentary.base, null, rudimentary.base,
+			rudimentary.base, null, rudimentary.base,
+		}, 3, 3, TRASH);
+		//BOM Workbench
+		crafting.addRecipeGrid(new ItemEntry[]{
+			rudimentary.base, iron.base, rudimentary.base,
+			rudimentary.base, ItemRaw.make(BOM), rudimentary.base,
+			rudimentary.base, iron.base, rudimentary.base,
+		}, 3, 3, BOMMAKER);
+		//Autocrafters
+		crafting.addRecipeGrid(new ItemEntry[]{
+			rudimentary.base, rudimentary.base, rudimentary.base,
+			rudimentary.base, ManCrafter.types.get(0), rudimentary.base,
+			rudimentary.base, rudimentary.base, rudimentary.base,
+		}, 3, 3, AUTOCRAFTER1);
+		crafting.addRecipeGrid(new ItemEntry[]{
+			steel.base, iron.base, steel.base,
+			iron.base, ManCrafter.types.get(0), iron.base,
+			steel.base, iron.base, steel.base,
+		}, 3, 3, AUTOCRAFTER2);
+		crafting.addRecipeGrid(new ItemEntry[]{
+			titanium.base, stainless.base, titanium.base,
+			stainless.base, ManCrafter.types.get(0), stainless.base,
+			titanium.base, stainless.base, titanium.base,
+		}, 3, 3, AUTOCRAFTER3);
+		/*crafting.addRecipeGrid(new ItemEntry[]{
+			rudimentary.base, rudimentary.base, rudimentary.base,
+			rudimentary.base, ManCrafter.types.get(0), rudimentary.base,
+			rudimentary.base, rudimentary.base, rudimentary.base,
+		}, 3, 3, AUTOCRAFTER4);*/
+		crafting.addRecipeGrid(new ItemEntry[]{
+			rudimentary.base, IMOVER, rudimentary.base,
+			CHEST, ManCrafter.types.get(0), IMOVER,
+			iron.base, ItemRaw.make(BOM), iron.base
+		}, 3, 3, TIPD);
 	}
 	private static void _craftrsULV() {
 		//Coal Generator ULV

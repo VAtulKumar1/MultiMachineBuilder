@@ -6,16 +6,29 @@ import java.awt.*;
 
 import javax.swing.*;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimerTask;
 import java.awt.Desktop;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.awt.BorderLayout;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.commons.io.IOUtils;
+import org.joml.Math;
+
+import com.google.common.base.Strings;
+
 import mmb.NN;
 import mmb.engine.debug.Debugger;
+import mmb.engine.files.AdvancedFile;
+import mmb.engine.files.FileUtil;
 import mmb.engine.gl.HalfVecTest;
 import mmb.engine.mods.Mods;
 import mmb.engine.settings.GlobalSettings;
@@ -62,7 +75,6 @@ public class MainMenu extends MMBFrame {
 	
 	private JButton btnExit;
 	private JLabel timerLBL;
-	private JButton prank;
 	
 	/** Launch the application. */
 	public static void create() {
@@ -78,7 +90,7 @@ public class MainMenu extends MMBFrame {
 		setIconImage(MMBFrame.GEAR);
 		
 		setJMenuBar(menuBar);
-		menuBar.add(mnNewMenu);
+		menuBar.add(mnWindow);
 		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -101,16 +113,6 @@ public class MainMenu extends MMBFrame {
 		btnExit.addActionListener(e -> System.exit(0));
 		aside.add(btnExit);
 		
-		prank = new JButton($res("AprilFoolsGarblerTooltip"));
-		prank.setBackground(Color.YELLOW);
-		prank.setToolTipText($res("AprilFoolsGarblerPrank"));
-		prank.addActionListener(e -> {
-			garbler.setValue(true);
-			Thread thread = new Thread(HalfVecTest::run);
-			thread.start();
-		});
-		aside.add(prank);
-		
 		timerLBL = new JLabel("Current time goes here");
 		timerLBL.setToolTipText("The current time");
 		aside.add(timerLBL);
@@ -129,6 +131,79 @@ public class MainMenu extends MMBFrame {
 		tabbedPane.addTab($res("cgui-mods"), null, PanelMods.INSTANCE, null);
 		tabbedPane.addTab($res("cgui-settings"), null, new PanelSettings(), null);
 		tabbedPane.addTab($res("cgui-shop"), new PanelShop());
+		
+		//Check for updates
+		Thread thread = new Thread(this::check4updates);
+		thread.start();
+	}
+	
+	private void check4updates() {
+		JMenuItem jmi = null;
+		final String updateServer = "https://github.com/MultiMachineBuilder/MultiMachineBuilder/blob/master/version.txt?raw=true";
+		final String getupdates = "https://github.com/MultiMachineBuilder/MultiMachineBuilder/releases";
+		int[] version = {0, 6};
+		String newversion = "";
+		
+		
+		try {
+			AdvancedFile versionfile = FileUtil.getFile(updateServer);
+			debug.printl("Connecting to update server: "+versionfile.name());
+			try(InputStream is = versionfile.getInputStream()){
+				newversion = IOUtils.toString(is, Charset.defaultCharset());
+				String[] newversion0 = newversion.split("\\.");
+				debug.printl("Current version: "+newversion);
+				int[] newversion1 = new int[newversion0.length];
+				
+				//Parse the version
+				for(int i = 0; i < newversion0.length; i++) 
+					newversion1[i] = Integer.parseInt(newversion0[i]);
+				
+				//Compare the verions
+				int cmp = Arrays.compare(newversion1, version);
+				
+				if(cmp > 0) {
+					debug.printl("NEW UPDATE AVAILABLE: "+newversion0);
+					jmi = new JMenuItem($res("upd-new")+newversion+$res("upd-new2"));
+					jmi.setBackground(Color.YELLOW);
+					jmi.addActionListener(e -> {
+						try {
+							Desktop.getDesktop().browse(new URI(getupdates));
+						} catch (Exception ex) {
+							debug.stacktraceError(ex, "Unable to visit update site");
+						}
+					});
+				}else if(cmp < 0) {
+					jmi = new JMenuItem($res("upd-future"));
+					jmi.setBackground(Color.CYAN);
+					debug.printl("Your version is too new");
+				}else {
+					jmi = new JMenuItem($res("upd-curr"));
+					jmi.setBackground(Color.GREEN);
+					debug.printl("You have the current version");
+				}
+								
+			}
+		} catch (MalformedURLException e) {
+			jmi = new JMenuItem($res("upd-noserver")+updateServer);
+			jmi.setBackground(Color.RED);
+			debug.stacktraceError(e, "Invalid update server: "+updateServer);
+		}catch(FileNotFoundException e){
+			jmi = new JMenuItem($res("upd-noconn"));
+			jmi.setBackground(Color.RED);
+			debug.stacktraceError(e, "Unable to connect to update server");
+		} catch(IOException e) {
+			jmi = new JMenuItem($res("upd-err"));
+			jmi.setBackground(Color.RED);
+			debug.stacktraceError(e, "Error checking version");
+		} catch(NumberFormatException e) {
+			jmi = new JMenuItem($res("upd-malform")+newversion);
+			jmi.setBackground(Color.RED);
+			debug.stacktraceError(e, "Invalid version data: "+updateServer);
+		}
+		
+		if(jmi != null) {
+			addMenu(jmi);
+		}
 	}
 	
 	private void refreshTime() {

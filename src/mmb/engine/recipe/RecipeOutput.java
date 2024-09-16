@@ -51,7 +51,9 @@ public interface RecipeOutput extends Chance, Iterable<ItemStack>{
 	 * @param amount number of items
 	 */
 	@Override
-	public void produceResults(InventoryWriter tgt, int amount);
+	public default void produceResults(InventoryWriter tgt, int amount) {
+		for(Entry<ItemEntry> ent : getContents().object2IntEntrySet()) tgt.insert(ent.getKey(), ent.getIntValue());
+	}
 	/**
 	 * Produces one unit of recipe output
 	 * @param tgt
@@ -276,5 +278,20 @@ public interface RecipeOutput extends Chance, Iterable<ItemStack>{
 	 */
 	public static ItemStack entry2stack(Entry<@NN ItemEntry> entry){
 		return new ItemStack(entry.getKey(), entry.getIntValue());
+	}
+	
+	/**
+	 * @return pretty-printed item list
+	 */
+	public @NN default String prettyPrint() {
+		Object2IntMap<ItemEntry> contents = getContents();
+		int i = 0;
+		StringBuilder sb = new StringBuilder();
+		for(Entry<ItemEntry> ir: contents.object2IntEntrySet()) {
+			if(i > 0) sb.append("\n");
+			i++;
+			sb.append(ItemStack.toString(ir));
+		}
+		return sb.toString();
 	}
 }

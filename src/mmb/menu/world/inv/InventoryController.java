@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JButton;
 
 import static mmb.engine.settings.GlobalSettings.$res;
@@ -24,35 +25,40 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionListener;
 
+import io.github.parubok.text.multiline.MultilineLabel;
 import mmb.NN;
 import mmb.Nil;
 import mmb.data.variables.Variable;
 import mmb.engine.MMBUtils;
+import mmb.engine.debug.Debugger;
 import mmb.engine.inv.Inventory;
 import mmb.engine.inv.ItemRecord;
 import mmb.engine.item.ItemEntry;
 import mmb.engine.settings.GlobalSettings;
 import mmb.menu.Icons;
-
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Displays an inventory and allows selection of items for 
  * @author oskar
  */
-public class InventoryController extends Box implements AbstractInventoryController {
+public class InventoryController extends JPanel implements AbstractInventoryController {
 	private static final long serialVersionUID = -3804277344383315579L;
 	
 	private final JList<ItemRecord> invlist;
 	@NN private DefaultListModel<ItemRecord> model0 = new DefaultListModel<>();
-	
-	private Inventory inv;
+	/** Inventory to which this inventory controller is linked */
+	private transient Inventory inv;
 	private JLabel label;
 	private JButton btnRefresh;
 	private JScrollPane scrollPane;
 	private JButton btnUnsel;
+	/** Box at the top of this inventory controller */
 	@NN public final Box ubox;
+	private final MultilineLabel description;
+	private static final String SELECT = $res("pleaseselitem");
 
 	@Override
 	public void refresh() {
@@ -73,19 +79,19 @@ public class InventoryController extends Box implements AbstractInventoryControl
 	/**
 	 * Create the panel.
 	 */
-	public InventoryController() {
-		super(BoxLayout.Y_AXIS);
-		
+	public InventoryController() {		
+		setLayout(new MigLayout("", "[144px,grow]", "[center][grow][]"));
 		ubox = Box.createHorizontalBox();
-		add(ubox, "cell 0 0,growx");
+		add(ubox, "cell 0 0,growx,aligny center");
 		
 		scrollPane = new JScrollPane();
-		add(scrollPane);
+		add(scrollPane, "cell 0 1,grow");
 		
 		invlist = new JList<>();
 		scrollPane.setViewportView(invlist);
 		invlist.setModel(model0);
 		invlist.setCellRenderer(new CellRenderer());
+		
 		
 		//Upper box
 		label = new JLabel($res("wgui-inv"));
@@ -105,6 +111,21 @@ public class InventoryController extends Box implements AbstractInventoryControl
 		});
 		btnUnsel.setBackground(Color.BLUE);
 		ubox.add(btnUnsel);
+		
+		description = new MultilineLabel();
+		
+		description.setBackground(new Color(0, 191, 255));
+		description.setText(SELECT);
+		invlist.addListSelectionListener(lse -> {
+			ItemRecord record = invlist.getSelectedValue();
+			if(record == null) {
+				description.setText(SELECT);
+				return;
+			}
+			String s = record.item().description();
+			description.setText(s==null?"":s);
+		});
+		add(description, "cell 0 2,grow");
 	}
 	/**
 	 * Creates an InventoryController with an inventory
@@ -206,36 +227,52 @@ public class InventoryController extends Box implements AbstractInventoryControl
 		btnRefresh.setEnabled(hasInv);
 	}
 
-	private static class CellRenderer extends JLabel implements ListCellRenderer<ItemRecord>{
+	private static class CellRenderer extends Box implements ListCellRenderer<ItemRecord>{
+		public CellRenderer() {
+			super(BoxLayout.X_AXIS);
+			add(image);
+			add(label);
+		}
+
 		private static final long serialVersionUID = -3535344904857285958L;
 		private final Dimension PRESENT = new Dimension(275, 32);
 		private final Dimension ABSENT = new Dimension();
+		private static final Debugger debug = new Debugger("INVENTORY CELL RENDERER");
+		private final JLabel image = new JLabel();
+		private final MultilineLabel label = new MultilineLabel();
+		
 		@Override
 		public Component getListCellRendererComponent(
 			@SuppressWarnings("null") JList<? extends ItemRecord> list,
-			@SuppressWarnings("null") ItemRecord itemType,
+			@SuppressWarnings("null") ItemRecord irecord,
 			int index,
 			boolean isSelected,
 			boolean cellHasFocus
 		){
-			int amount = itemType.amount();
+			int amount = irecord.amount();
 			if(amount == 0) {
 				setPreferredSize(ABSENT);
 				setMinimumSize(ABSENT);
+				image.setIcon(null);
+				label.setText("");
 			}else {
 				setPreferredSize(PRESENT);
 				setMinimumSize(PRESENT);
+				setOpaque(true);
+				image.setIcon(irecord.item().icon());
+				label.setText(irecord.item().title() + " * " + irecord.amount());
 			}
-			setOpaque(true);
-			setIcon(itemType.item().icon());
-			setText(itemType.id().title() + " � " + itemType.amount());
 			
 			if (isSelected) {
 			    setBackground(list.getSelectionBackground());
 			    setForeground(list.getSelectionForeground());
+			    label.setBackground(list.getSelectionBackground());
+			    label.setForeground(list.getSelectionForeground());
 			} else {
 			    setBackground(list.getBackground());
 			    setForeground(list.getForeground());
+			    label.setBackground(list.getBackground());
+			    label.setForeground(list.getForeground());
 			}
 			return this;
 		}
@@ -318,6 +355,5 @@ public class InventoryController extends Box implements AbstractInventoryControl
 	 */
 	public void removeListSelectionListener(ListSelectionListener listener) {
 		invlist.removeListSelectionListener(listener);
-	}
-		
+	}	
 }

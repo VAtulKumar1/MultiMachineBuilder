@@ -103,7 +103,7 @@ public final class SimpleItemList implements RecipeOutput {
 	 */
 	public SimpleItemList(Inventory inv) {
 		for(ItemRecord irecord: inv) {
-			data.put(irecord.item(), irecord.amount());
+			if(irecord.amount() > 0) data.put(irecord.item(), irecord.amount());
 		}
 	}
 	/**
@@ -123,7 +123,7 @@ public final class SimpleItemList implements RecipeOutput {
 		return new InventoryWriter() {
 			@Override
 			public int insert(ItemEntry ent, int amount) {
-				data.put(ent, get(ent));
+				data.put(ent, amount);
 				return amount;
 			}
 			@Override
@@ -165,19 +165,12 @@ public final class SimpleItemList implements RecipeOutput {
 	public int getOrDefault(ItemEntry entry, int value) {
 		return data.getOrDefault(entry, value);
 	}
-	
-	
-
-	@Override
-	public void produceResults(InventoryWriter tgt, int amount) {
-		// TODO Auto-generated method stub
-		
-	}
 
 	@Override
 	public void represent(PicoWriter out) {
-		// TODO Auto-generated method stub
-		
+		for(Entry<ItemEntry> entry: data.object2IntEntrySet()) {
+			out.writeln(ItemStack.toString(entry));
+		}
 	}
 
 	private double vol = -1;
@@ -207,5 +200,10 @@ public final class SimpleItemList implements RecipeOutput {
 			return data.equals(((RecipeOutput) obj).getContents());
 		return false;
 	}
-	
+	@Override
+	public @NN String toString() {
+		PicoWriter writer = new PicoWriter();
+		represent(writer);
+		return writer.toString();
+	}
 }

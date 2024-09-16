@@ -55,7 +55,6 @@ public class Main extends JFrame {
 	/**
 	 * Crashes the game to the desktop
 	 * @param e throwable, which caused the crash
-	 * @throws SecurityException if run by a mod
 	 */
 	public static void crash(Throwable e) {
 		debug.stacktraceError(e, "GAME HAS CRASHED");
@@ -67,7 +66,7 @@ public class Main extends JFrame {
 	}
 	@Nil private static Consumer<Throwable> errorHook;
 	/**
-	 * @discouraged DO NOT USE THIS METHOD
+	 * @discouraged DO NOT USE THIS METHOD EXCEPT IN TESTS
 	 * @param eh error hook
 	 */
 	public static void errorhook(Consumer<Throwable> eh) {

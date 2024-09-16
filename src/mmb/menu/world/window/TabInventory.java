@@ -76,8 +76,14 @@ public class TabInventory extends JPanel {
 	public final WorldWindow window;
 	
 	//Tag selectors (tagsels)
+	/**
+	 * Filters items by tags or properties
+	 * @author oskar
+	 */
 	public static interface Tagsel{
+		/** @return all matching items */
 		@NN public DefaultListModel<ItemType> eligible();
+		/** @return Display title in tag selection list */
 		@NN public String title();
 	}
 	
@@ -174,7 +180,7 @@ public class TabInventory extends JPanel {
 	 */
 	public TabInventory(WorldWindow window) {
 		this.window = window;
-		setLayout(new MigLayout("", "[:400.00:400.00,grow,fill][]", "[20px,grow]"));
+		setLayout(new MigLayout("", "[400.00,fill][]", "[20px,grow]"));
 		craftGUI = new CraftGUI(2, null, null, null);
 		timer = new Timer(0, e -> craftGUI.inventoryController.refresh());
 		add(craftGUI, "cell 1 0,growy");
@@ -191,11 +197,12 @@ public class TabInventory extends JPanel {
 		panel.setLayout(new MigLayout("", "[][]", "[][][][][]"));
 		
 		lblCreativeItems = new JLabel($res("wgui-creati"));
-		panel.add(lblCreativeItems, "cell 0 0");
+		panel.add(lblCreativeItems, "cell 0 0,growx");
 		
-		checkSurvival = new BoundCheckBox();
-		checkSurvival.setText($res("wgui-creamode"));
-		panel.add(checkSurvival, "cell 1 0");
+		lblGamemode = new JLabel("TEXT NOT SET! THIS IS A BUG!");
+		lblGamemode.setBackground(new Color(65, 105, 225));
+		lblGamemode.setOpaque(true);
+		panel.add(lblGamemode, "cell 1 0");
 		
 		lbAddRemoveCount = new JLabel($res("wgui-icount"));
 		panel.add(lbAddRemoveCount, "cell 0 1");
@@ -211,7 +218,7 @@ public class TabInventory extends JPanel {
 		JButton btnAddN = new JButton($res("wgui-an"));
 		panel.add(btnAddN, "cell 1 2,growx");
 		btnAddN.addActionListener(e -> {
-			@SuppressWarnings("boxing")
+			@SuppressWarnings({"boxing", "🥊"})
 			int amt = (Integer)(itemAmt.getValue());
 			addItems(amt);
 		});
@@ -230,7 +237,7 @@ public class TabInventory extends JPanel {
 			removeItems(amt);
 		});
 		btnRemoveN.setBackground(new Color(204, 0, 0));
-		panel.add(btnRemoveN, "cell 1 3");
+		panel.add(btnRemoveN, "cell 1 3,growx");
 		
 		JButton btnREmoveAll = new JButton($res("wgui-ra"));
 		btnREmoveAll.addActionListener(e -> removeItems(Integer.MAX_VALUE));
@@ -417,12 +424,10 @@ public class TabInventory extends JPanel {
 		this.player = player;
 		playerChanged.trigger(player);
 		craftGUI.inventoryController.setInv(player.inv);
-		checkSurvival.setVariable(player.creative);
 	}
 	
 	private final Timer timer;
 	private JLabel lblCreativeItems;
-	private BoundCheckBox checkSurvival;
 	private JLabel lbAddRemoveCount;
 	private JPanel panel;
 	private JSpinner itemAmt;
@@ -436,6 +441,7 @@ public class TabInventory extends JPanel {
 	private JScrollPane scrollPane;
 	private MultilineLabel multilineLabel;
 	private JLabel lblResults;
+	JLabel lblGamemode;
 
 	/**
 	 * @author oskar

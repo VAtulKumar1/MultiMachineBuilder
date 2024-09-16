@@ -94,13 +94,12 @@ public class World implements Identifiable<String>, Indexable{
 	
 	//Naming
 	private String name;
-	/**
-	 * @return this world's name
-	 */
+	/** @return this world's name */
 	public String getName() {
 		return name;
 	}
 	/**
+	 * Renames the world
 	 * @param name new name
 	 */
 	public void setName(@Nil String name) {
@@ -169,18 +168,49 @@ public class World implements Identifiable<String>, Indexable{
 	
 	//Serialization
 	/**
+	 * Thrown when a malformed world is loaded
+	 * @author oskar
+	 */
+	public static class WorldLoadException extends RuntimeException{
+		private static final long serialVersionUID = -3479151473029171459L;
+		public WorldLoadException() {
+			super();
+		}
+		public WorldLoadException(String message, Throwable cause) {
+			super(message, cause);
+		}
+		public WorldLoadException(String message) {
+			super(message);
+		}
+		public WorldLoadException(Throwable cause) {
+			super(cause);
+		}
+	}
+	/**
 	 * Loads a world from JSON
 	 * @param json JSON data to load
 	 * @return a world from JSON file
+	 * @throws WorldLoadException when world misses critical information
 	 * @throws NullPointerException if JSON data is null
 	 */
-	public static World load(JsonNode json) {
+	public static World load(JsonNode json) throws WorldLoadException {
 		Objects.requireNonNull(json, "World is loaded with null"); //unlikely to occur
+		
 		//Dimensions
-		int sizeX = json.get("sizeX").asInt();
-		int sizeY = json.get("sizeY").asInt();
-		int startX = json.get("startX").asInt();
-		int startY = json.get("startY").asInt();
+		JsonNode _sizeX = json.get("sizeX");
+		JsonNode _sizeY = json.get("sizeY");
+		JsonNode _startX = json.get("startX");
+		JsonNode _startY = json.get("startY");
+		//Verify dimensions
+		if(_sizeX == null) throw new WorldLoadException("No X size");
+		if(_sizeY == null) throw new WorldLoadException("No Y size");
+		if(_startX == null) throw new WorldLoadException("No X start pos");
+		if(_startY == null) throw new WorldLoadException("No Y start pos");
+		//Set dimensions
+		int sizeX = _sizeX.asInt();
+		int sizeY = _sizeY.asInt();
+		int startX = _startX.asInt();
+		int startY = _startY.asInt();
 		int endX = sizeX + startX;
 		int endY = sizeY + startY;
 		
@@ -189,6 +219,7 @@ public class World implements Identifiable<String>, Indexable{
 		
 		//Blocks
 		ArrayNode worldArray = (ArrayNode) json.get("world");
+		if(worldArray == null) throw new WorldLoadException("No world array");
 		Iterator<JsonNode> iter = worldArray.elements();
 		for(int y = startY; y < endY; y++) {
 			for(int x = startX; x < endX; x++) {
@@ -418,7 +449,6 @@ public class World implements Identifiable<String>, Indexable{
 			debug.stacktraceError(e, "Interrupted!");
 			Thread.currentThread().interrupt();
 		}
-		//while(!underTick) {Thread.yield();}
 	}
 		
 	//Player actions
@@ -436,9 +466,7 @@ public class World implements Identifiable<String>, Indexable{
 		}
 		return result;
 	}
-	/**
-	 * The player object for this world
-	 */
+	/** The player object for this world */
 	@NN public final Player player = new Player(this);
 	
 	//Map proxy
@@ -452,9 +480,7 @@ public class World implements Identifiable<String>, Indexable{
 	
 	//Block entities
 	@NN Set<BlockEntity> _blockents = new HashSet<>();
-	/**
-	 * an unmodifiable {@link Set} of {@link BlockEntity}s on this {@code BlockMap}
-	 */
+	/** an unmodifiable {@link Set} of {@link BlockEntity}s on this {@code BlockMap} */
 	@NN public final Set<BlockEntity> blockents = Collections.unmodifiableSet(_blockents);
 	
 	//Block array
@@ -465,13 +491,13 @@ public class World implements Identifiable<String>, Indexable{
 	 * @param x X coordinate
 	 * @param y Y coordinate
 	 * @return a block at given location, or null if absent
-	 * @throws IndexOutOfBoundsException if the coordinates are out of bounds
 	 */
 	@NN public BlockEntry get(int x, int y) {
 		if(!inBounds(x, y)) return Blocks.blockVoid;
 		return entries.get(x-startX, y-startY);
 	}
 	/**
+	 * Gets block off a given location, in given direction
 	 * @param s side, from which to get
 	 * @param x X coordinate
 	 * @param y Y coordinate
@@ -515,7 +541,7 @@ public class World implements Identifiable<String>, Indexable{
 		return b;
 	}
 	/**
-	 * Places a block of given type
+	 * Places given block
 	 * @param b a block entry to place
 	 * @param x X coordinate
 	 * @param y Y coordinate
